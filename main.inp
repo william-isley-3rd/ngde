@@ -9,7 +9,6 @@ Surface Tension in the form A-BT(dyne/cm): A=65.0 B=0.0
 Solubility Product Ksp: 4.2e-32
 Enter your choice - 1)Coagulation,2)nucleation+coagulation,3)nucleation + coagulation + surface growth,4)surface growth:3
 Choice of collision frequency function:1)Free Molecular Regime,2)Fuchs form for free molecular and transition regime,3)Stokes-Einstein:3
-Sutherland's constants for carrier gas in the form A*T^1.5/(B+T): A=1.966e-6 B=147.47
 Heterogeneous Wetting Angle: 40.0
 Restart: 1
   
