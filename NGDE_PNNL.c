@@ -487,7 +487,7 @@ int coagulation_nucleation_surface()
             QM, Qsol, Ksp, viscosity, alpha, wetangle, temp_t1_k, temp_t2_k, time_taken,
             m[MAX1];
     // double kn1,kn2,c1,c2,D1,D2,g1,g2,l1,l2,A_mu,B_mu,lambda,mu,C,D,E,F,t3,t4,Ninf,Ps,P,n,fi,t_SPD,Ninf_eq,dstep_coag;
-    int XxK_loop_list[1514],XxK_loop_counter=0,XxK_loop_val,XxK_looper;
+    int base, XxK_loop_list[728],XxK_loop_counter=0,XxK_loop_val,XxK_loop_val2,XxK_looper;
     int XxK_loop_size = sizeof(XxK_loop_list) / sizeof(int);
     clock_t real_time;
     FILE *fptr,*fdout,*fbinsout,*frestart;
@@ -508,6 +508,7 @@ int coagulation_nucleation_surface()
     fclose(fptr);//Closing the main property data file.
     q=pow(10.0,(8.0/(MAX-2)));//Calculation of geometric spacing factor which depends on the number of nodes.
     v1 = MW/(rho*Na);// Volume of a monomer unit (a molecule); Na is the Avogadro's Number.
+    base = MAX+1;
 
     if (restart_option == 1) {
         // need to read the bins to get initial # of particles and time
@@ -596,32 +597,83 @@ int coagulation_nucleation_surface()
                 //Calculating the smallest collision frequency function to decide the characteristic coagulation time.
                 if (K[i][j]<Kmin)
                     Kmin = K[i][j];
-
+                if(i == 1 || j == 1 || k == 1){
+                    continue;
+                }
                 if (v[i]+v[j]>=v[MAX]) {
-                    XxK[i][j][MAX] = (v[i] + v[j]) / v[MAX] * K[i][j];
-                    //XxK_loop_val = MAX * (MAX * MAX) + MAX * j + i;
-                    //XxK_loop_list[XxK_loop_counter] = XxK_loop_val;
-                    //XxK_loop_counter = XxK_loop_counter + 1;
-                   // printf('loop index is %d \n', XxK_loop_counter);
+                    if (i == j){
+                        XxK[i][j][MAX] = 0.5 * (v[i] + v[j]) / v[MAX] * K[i][j];
+                    }else{
+                        XxK[i][j][MAX] = (v[i] + v[j]) / v[MAX] * K[i][j];
+                    }
+
+                    XxK_loop_val = MAX * (base * base) + base * j + i;
+                    XxK_loop_val2 = MAX * (base * base) + base * i + j;
+                    for (XxK_looper = 0; XxK_looper <= XxK_loop_counter; XxK_looper++) {
+                        if (XxK_loop_val == XxK_loop_list[XxK_looper]) {
+                            break;
+                        }
+                        else if (XxK_loop_val2 == XxK_loop_list[XxK_looper]){
+                            break;
+                        }
+                        else if (XxK_looper - XxK_loop_counter == 0) {
+                            XxK_loop_list[XxK_loop_counter] = XxK_loop_val;
+                            XxK_loop_counter = XxK_loop_counter + 1;
+                            //printf("loop index is %d size is %d \n", XxK_loop_val,XxK_loop_counter);
+                            break;
+                        }
+                    }//End for to make sure no duplicates are added
+                    // end else statement for adding XxK values to list in vi + vj > vmax
+                    //
                 }
                 else
                 {
                     if(v[k]<= (v[i]+v[j]) && (v[i]+v[j])<v[k+1])
                     {
-                        XxK[i][j][k]=(v[k+1]-v[i]-v[j])/(v[k+1]-v[k]) * K[i][j];
-                        //XxK_loop_val = (int) k * (MAX * MAX) + MAX * j + i;
-                        //XxK_loop_list[XxK_loop_counter] = XxK_loop_val;
-                        //XxK_loop_counter = XxK_loop_counter + 1;
-                    }
+                        if (i == j){
+                            XxK[i][j][k]=0.5 * (v[k+1]-v[i]-v[j])/(v[k+1]-v[k]) * K[i][j];
+                        }else {
+                            XxK[i][j][k] = (v[k + 1] - v[i] - v[j]) / (v[k + 1] - v[k]) * K[i][j];
+                        }
+
+                        XxK_loop_val = k * (base * base) + base * j + i;
+                        XxK_loop_val2 = k * (base * base) + base * i + j;
+                        for (XxK_looper = 0; XxK_looper <= XxK_loop_counter; XxK_looper++) {
+                            if (XxK_loop_val2 == XxK_loop_list[XxK_looper]) {
+                                break;
+                            } else if (XxK_looper - XxK_loop_counter == 0) {
+                                XxK_loop_list[XxK_loop_counter] = XxK_loop_val;
+                                XxK_loop_counter = XxK_loop_counter + 1;
+                                //printf("loop index is %d size is %d \n", XxK_loop_val,XxK_loop_counter);
+                                break;
+                            }
+                        } // end for loop to check for i & j double count
+
+                    }// end conditional for vk <= vi + vj < vk+1
                     else
                     {
                         if(v[k-1]<= (v[i]+v[j]) && (v[i]+v[j])<v[k])
                         {
-                            XxK[i][j][k]=(v[i]+v[j]-v[k-1])/(v[k]-v[k-1]) * K[i][j];
-                            //XxK_loop_val = k * (MAX * MAX) + MAX * j + i;
-                            //XxK_loop_list[XxK_loop_counter] = XxK_loop_val;
-                            //XxK_loop_counter = XxK_loop_counter + 1;
-                        }
+                            if (i == j){
+                                XxK[i][j][k]=0.5*(v[i]+v[j]-v[k-1])/(v[k]-v[k-1]) * K[i][j];
+                            }else{
+                                XxK[i][j][k]=(v[i]+v[j]-v[k-1])/(v[k]-v[k-1]) * K[i][j];
+                            }
+
+                            XxK_loop_val = k * (base * base) + base * j + i;
+                            XxK_loop_val2 = k * (base * base) + base * i + j;
+                            for (XxK_looper = 0; XxK_looper <= XxK_loop_counter; XxK_looper++) {
+                                if (XxK_loop_val2 == XxK_loop_list[XxK_looper]) {
+                                    break;
+                                } else if (XxK_looper - XxK_loop_counter == 0) {
+                                    XxK_loop_list[XxK_loop_counter] = XxK_loop_val;
+                                    XxK_loop_counter = XxK_loop_counter + 1;
+                                    //printf("loop index is %d size is %d \n", XxK_loop_val,XxK_loop_counter);
+                                    break;
+                                }
+                            } // end for loop to check for i & j double count
+
+                        }// end conditional for vk-1 <= vi + vj < vk
                         else {
                             XxK[i][j][k] = 0;
                         }
@@ -760,7 +812,9 @@ int coagulation_nucleation_surface()
                     {
                         temp_t1_k = K[1][k-1]*(N[1]-N1s[k-1])*N[k-1];
                         addterm[k] = addterm[k] + (v[1]/(v[k]-v[k-1]))*temp_t1_k;//Growth of k due to condensation of monomers on k-1.
-                        t1 = t1 + -temp_t1_k;//Loss of monomers that have condensed.
+                        t1 = t1 + temp_t1_k;//Loss of monomers that have condensed.
+                        //addterm[k] = addterm[k] + (v[1]/(v[k]-v[k-1]))*K[1][k-1]*(N[1]-N1s[k-1])*N[k-1];//Growth of k due to condensation of monomers on k-1.
+                        //t1 = t1 + K[1][k-1]*(N[1]-N1s[k-1])*N[k-1];//Loss of monomers that have condensed.
                     }
                 } // end N[1]>N1s[k-1]
 
@@ -774,6 +828,9 @@ int coagulation_nucleation_surface()
                         temp_t2_k = K[1][k+1]*(N[1]-N1s[k+1])*N[k+1];
                         addterm[k] = addterm[k] -(v[1]/(v[k+1]-v[k]))*temp_t2_k;//Growth of k due to evaporation of monomers from k+1.
                         t2 = t2 + -temp_t2_k;//Gain of monomers that have evaporated.
+                        // addterm[k] = addterm[k] -(v[1]/(v[k+1]-v[k]))*K[1][k+1]*(N[1]-N1s[k+1])*N[k+1];
+                        //t2 = t2 + K[1][k+1]*(-N[1]+N1s[k+1])*N[k+1];
+
                     }
                 } // end N[1]<N1s[k+1]
 
@@ -790,9 +847,11 @@ int coagulation_nucleation_surface()
                 {
                     if (k==2)
                     {
-                        double temp_t2_k = K[1][k]*(N[1]-N1s[k])*N[k];
+                        temp_t2_k = K[1][k]*(N[1]-N1s[k])*N[k];
                         subterm[k] = subterm[k] - (v[1]/(v[k]-v[k-1]))*temp_t2_k;
                         t2 = t2 + -temp_t2_k;//Gain of monomers that have evaporated.
+                        //subterm[k] = subterm[k] - (v[1]/(v[k]-v[k-1]))*K[1][k]*(N[1]-N1s[k])*N[k];
+                        //t2 = t2 + K[1][k]*(-N[1]+N1s[k])*N[k];//Gain of monomers that have evaporated.
                     }
                     else
                         subterm[k] = subterm[k] - (v[1]/(v[k]-v[k-1]))*K[1][k]*(N[1]-N1s[k])*N[k];
@@ -804,27 +863,30 @@ int coagulation_nucleation_surface()
             for(i=2;i<=MAX;i++)
             {
                 sum2[k]=sum2[k]+K[k][i]*N[i]; // k collides with any other particle to get out of node k, thus loss term.
-                for(j=2;j<=k;j++) {
+                /*for(j=2;j<=k;j++) {
                     sum1[k] = sum1[k] + XxK[i][j][k] * N[i] * N[j];
                     // sum1[k] = sum1[k] + X[i][j][k] * K[i][j] * N[i] * N[j];
                     // i and j collide to form particle of size k which is then multiplied by the size splitting
                     // operator to put the particles in the adjacent nodes after adjusting the volume.
-                }
+                }*/
             }// end for i, for coagulation
         }  // end for k, over surface and coag
 
-        /*for(XxK_looper=0; XxK_looper< XxK_loop_size; XxK_looper++){
+        for(XxK_looper=0; XxK_looper< XxK_loop_size; XxK_looper++){
             XxK_loop_val = XxK_loop_list[XxK_looper];
-            i = XxK_loop_val % MAX;
-            j = ((XxK_loop_val - i)/MAX) % MAX;
-            k = (((XxK_loop_val - i)/MAX) - j) / MAX;
-            //printf('%d\n', XxK_loop_val);
+            i = XxK_loop_val % base;
+            j = ((XxK_loop_val - i)/base) % base;
+            k = (((XxK_loop_val - i)/base) - j) / base;
+            //printf("i %d j %d k %d val %d\n", i,j,k,XxK_loop_val);
             sum1[k] = sum1[k] + XxK[i][j][k] * N[i] * N[j];
-        }*/
+        }
 
         // Change in PSD due to Nucleation, Coagulation and Surface Growth.
         for(k=2;k<=MAX;k++) {
-            N[k] = N[k] + step * (0.5 * sum1[k] - N[k] * sum2[k] + Jk * zeta[k] + addterm[k] - subterm[k]);
+            // Using original formulation for coagulation sum
+            // N[k] = N[k] + step * (0.5 * sum1[k] - N[k] * sum2[k] + Jk * zeta[k] + addterm[k] - subterm[k]);
+            // Using new formulation for coagulation sum
+            N[k] = N[k] + step * ( sum1[k] - N[k] * sum2[k] + Jk * zeta[k] + addterm[k] - subterm[k]);
         }
         // Change in the concentration of monomers as they are used up in nucleation and surface growth.
         N[1] = N[1] - Jk*kstar*step - step*(t1 -t2);//Monomer balance equation.
