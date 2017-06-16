@@ -1,4 +1,6 @@
-Authors: Anand Prakash, Ameya P. Bapat and Michael R. Zachariah, May 14, 2005.
+Authors: William C Isley III
+
+Heavily modified from version written and published by: Anand Prakash, Ameya P. Bapat and Michael R. Zachariah, May 14, 2005.
 
 ** NGDE.exe is the executable file that one should use on a windows machine. Note that the code needs to be recompiled if one wants to make changes to it.
 
@@ -35,19 +37,7 @@ problem, the corresponding input files "coag.inp"/"grow.inp" must be modified ac
 
 IMPORTANT NOTE:
 
-1. The input file format should not be modified unless the user is willing to make the corresponding changes in the code. Only the numerical entities after the colon (":") may be changed as desired.
-2. If you choose to run pure coagulation, be sure to modify "coag.inp" as required.
-3. If you choose to run pure surface growth, be sure to modify "grow.inp" as required.
-4. If instead of a constant cooling rate you want to enter a time dependent temperature profile you need to modify the following lines in the code
-        401
-        618
-        709
-
-Example: You need to comment the line "T = T -step*coolrate"
-
-and replace it with you own temperature profile
-
-Example. T= 1800 + t*2.3 - t*t*3.4
+The input file format should not be modified unless the user is willing to make the corresponding changes in the code. Only the numerical entities after the colon (":") may be changed as desired.
 
 Finally, the code has been well commented and making changes by the user should not be difficult.
 
